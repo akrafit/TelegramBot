@@ -1,3 +1,5 @@
+package ru.rest.telegram.model;
+
 import lombok.Getter;
 import lombok.Setter;
 

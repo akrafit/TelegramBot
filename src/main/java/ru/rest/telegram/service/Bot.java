@@ -1,4 +1,6 @@
-import config.BotSettings;
+package ru.rest.telegram.service;
+
+import ru.rest.telegram.config.BotSettings;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
@@ -12,6 +14,9 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
+import ru.rest.telegram.model.ExamUser;
+import ru.rest.telegram.model.ExaminationTicket;
+import ru.rest.telegram.model.Ticket;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -21,13 +26,10 @@ import java.util.Map;
 
 @Slf4j
 public class Bot extends TelegramLongPollingBot {
-    private final static int TEXT_LIMIT = 512;
     private final static BotSettings botSettings = BotSettings.getInstance();
     private static Bot instance;
     private final TelegramBotsApi telegramBotsApi;
-    //private List<String> registeredCommands = new ArrayList<>();
-    private Map<Long, ExamUser> examUserMap = new HashMap<>();
-
+    private final Map<Long, ExamUser> examUserMap = new HashMap<>();
     @Override
     public void onUpdateReceived(Update update) {
         System.out.println("здесь");
@@ -48,6 +50,11 @@ public class Bot extends TelegramLongPollingBot {
             message = update.getMessage();
             examUser = getExamUser(message);
         }
+//        if(examUser.getAdmin().equals("1")){
+//            if (message.hasText()) {
+//                sendMsg(examUser.getChatId(),"Ведите вопрос");
+//            }
+//        }
         if(examUser.getLastTicket() != null){
             sendMsg(examUser.getChatId(),"Меню заблокировано");
             return;
@@ -66,7 +73,11 @@ public class Bot extends TelegramLongPollingBot {
                     break;
                 case "Java тесты":
                     sendMsg(message.getChatId(), "Запускаю тест, у Вас есть 30 минут");
-                    generateTestForExamUser(examUser);
+                    generateTestForExamUser(examUser,"SQL");
+                    break;
+                case "admin":
+                    sendMsg(message.getChatId(), "Режим админа включен");
+                    examUser.setAdmin("1");
                     break;
                 default:
                     sendMsg(message.getChatId(), "Команда не распознана");
@@ -78,7 +89,7 @@ public class Bot extends TelegramLongPollingBot {
     private void generateResponseFromQuestion(Update update, ExamUser examUser) {
         ExaminationTicket examinationTicket = examUser.getExaminationTickets();
         Ticket lastTicket = examUser.getLastTicket();
-        Integer numberOfAnswer = Integer.parseInt(update.getCallbackQuery().getData());
+        int numberOfAnswer = Integer.parseInt(update.getCallbackQuery().getData());
         lastTicket.setActualAnswer(numberOfAnswer);
         sendMsg(examUser.getChatId(),"Ваш ответ: " + lastTicket.getAnswers().get(numberOfAnswer));
         examinationTicket.getTicketsPassed().add(lastTicket);
@@ -100,28 +111,15 @@ public class Bot extends TelegramLongPollingBot {
         return "Правильных ответов " + rightAnswerCount * 100 /allTickets + " %";
     }
 
-    private void generateTestForExamUser(ExamUser examUser) {
+    private void generateTestForExamUser(ExamUser examUser, String type) {
         ExaminationTicket examinationTicket = new ExaminationTicket();
-        ArrayList<Ticket> tickets = new ArrayList<>();
-        for (int i = 0; i < 10; i++){
-            Ticket ticket = new Ticket();
-            List<String> answers = new ArrayList<>();
-            answers.add("Декоратор");
-            answers.add("Прокси");
-            answers.add("Фабрика");
-            answers.add("Фасад");
-            ticket.setAnswers(answers);
-            ticket.setTitle("Какой паттерн " + i);
-            ticket.setCorrectAnswer(1);
-            tickets.add(ticket);
-        }
+        ArrayList<Ticket> tickets =  MicroServiceUtil.getExaminationTicketFromMicroservice(type,10);
         examUser.setLastTicket(tickets.remove(0));
         examinationTicket.setTicketsActual(tickets);
         examinationTicket.setStartTime(Instant.now());
         examUser.setExaminationTickets(examinationTicket);
         examUser.setExaminationStartTime(Instant.now());
         String textForSend = generateTextForTicket(examUser.getLastTicket());
-
         sendMsgWithInlineKeyBoard(examUser.getChatId(), textForSend);
 
     }
@@ -203,13 +201,13 @@ public class Bot extends TelegramLongPollingBot {
         InlineKeyboardButton inlineKeyboardButtonC = new InlineKeyboardButton();
         InlineKeyboardButton inlineKeyboardButtonD = new InlineKeyboardButton();
         inlineKeyboardButtonA.setText("A");
-        inlineKeyboardButtonA.setCallbackData("0");
+        inlineKeyboardButtonA.setCallbackData("1");
         inlineKeyboardButtonB.setText("B");
-        inlineKeyboardButtonB.setCallbackData("1");
+        inlineKeyboardButtonB.setCallbackData("2");
         inlineKeyboardButtonC.setText("C");
-        inlineKeyboardButtonC.setCallbackData("2");
+        inlineKeyboardButtonC.setCallbackData("3");
         inlineKeyboardButtonD.setText("D");
-        inlineKeyboardButtonD.setCallbackData("3");
+        inlineKeyboardButtonD.setCallbackData("4");
         List<InlineKeyboardButton> keyboardButtonsRowTop = new ArrayList<>();
         List<InlineKeyboardButton> keyboardButtonsRowDown = new ArrayList<>();
         keyboardButtonsRowTop.add(inlineKeyboardButtonA);
@@ -238,7 +236,7 @@ public class Bot extends TelegramLongPollingBot {
             registerBot();
             //registerCommands();
         } catch (TelegramApiException e) {
-            throw new RuntimeException("Telegram Bot initialization error: " + e.getMessage());
+            throw new RuntimeException("Telegram ru.rest.telegram.service.Bot initialization error: " + e.getMessage());
         }
     }
 

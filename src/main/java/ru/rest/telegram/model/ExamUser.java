@@ -1,3 +1,5 @@
+package ru.rest.telegram.model;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,4 +14,5 @@ public class ExamUser {
     private Instant examinationStartTime;
     private Long lastMassageToUser;
     private Ticket lastTicket;
+    private String admin;
 }

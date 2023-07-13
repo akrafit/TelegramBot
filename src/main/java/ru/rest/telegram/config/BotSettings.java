@@ -1,6 +1,7 @@
-package config;
+package ru.rest.telegram.config;
 
 import lombok.Data;
+import lombok.Getter;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 
 import java.io.IOException;
@@ -8,6 +9,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 @Data
+@Getter
 public class BotSettings {
 
     public static final String FILE_NAME = "application.properties";
@@ -16,6 +18,11 @@ public class BotSettings {
     private String token;
     private String userName;
     private TelegramBotsApi telegramBotsApi;
+    private static String dataServiceHost;
+
+    public static String getDataHost(){
+        return dataServiceHost;
+    }
 
     public static BotSettings getInstance() {
         if (instance == null)
@@ -39,8 +46,13 @@ public class BotSettings {
             if (userName == null) {
                 throw new RuntimeException("UserName value is null");
             }
+            dataServiceHost = properties.getProperty("dataHost");
+            if (dataServiceHost == null) {
+                throw new RuntimeException("DataServiceHost value is null");
+            }
+
         } catch (RuntimeException | IOException e) {
-            throw new RuntimeException("Bot initialization error: " + e.getMessage());
+            throw new RuntimeException("ru.rest.telegram.service.Bot initialization error: " + e.getMessage());
         }
     }
 }
