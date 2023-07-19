@@ -86,7 +86,6 @@ public class Bot extends TelegramLongPollingBot {
             }
         }
     }
-
     private void generateResponseFromQuestion(Update update, ExamUser examUser) {
         ExaminationTicket examinationTicket = examUser.getExaminationTickets();
         Ticket lastTicket = examUser.getLastTicket();
