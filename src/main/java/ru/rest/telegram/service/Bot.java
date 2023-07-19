@@ -1,6 +1,5 @@
 package ru.rest.telegram.service;
 
-import ru.rest.telegram.config.BotSettings;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
@@ -14,6 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
+import ru.rest.telegram.config.BotSettings;
 import ru.rest.telegram.model.ExamUser;
 import ru.rest.telegram.model.ExaminationTicket;
 import ru.rest.telegram.model.Ticket;
@@ -30,6 +30,7 @@ public class Bot extends TelegramLongPollingBot {
     private static Bot instance;
     private final TelegramBotsApi telegramBotsApi;
     private final Map<Long, ExamUser> examUserMap = new HashMap<>();
+
     @Override
     public void onUpdateReceived(Update update) {
         System.out.println("здесь");
@@ -55,8 +56,8 @@ public class Bot extends TelegramLongPollingBot {
 //                sendMsg(examUser.getChatId(),"Ведите вопрос");
 //            }
 //        }
-        if(examUser.getLastTicket() != null){
-            sendMsg(examUser.getChatId(),"Меню заблокировано");
+        if (examUser.getLastTicket() != null) {
+            sendMsg(examUser.getChatId(), "Меню заблокировано");
             return;
         }
 
@@ -73,7 +74,7 @@ public class Bot extends TelegramLongPollingBot {
                     break;
                 case "Java тесты":
                     sendMsg(message.getChatId(), "Запускаю тест, у Вас есть 30 минут");
-                    generateTestForExamUser(examUser,"SQL");
+                    generateTestForExamUser(examUser, "SQL");
                     break;
                 case "admin":
                     sendMsg(message.getChatId(), "Режим админа включен");
@@ -91,14 +92,14 @@ public class Bot extends TelegramLongPollingBot {
         Ticket lastTicket = examUser.getLastTicket();
         int numberOfAnswer = Integer.parseInt(update.getCallbackQuery().getData());
         lastTicket.setActualAnswer(numberOfAnswer);
-        sendMsg(examUser.getChatId(),"Ваш ответ: " + lastTicket.getAnswers().get(numberOfAnswer));
+        sendMsg(examUser.getChatId(), "Ваш ответ: " + lastTicket.getAnswers().get(numberOfAnswer - 1));
         examinationTicket.getTicketsPassed().add(lastTicket);
         Ticket newFromUser = examinationTicket.getTicketsActual().remove(0);
-        if (examinationTicket.getTicketsActual().size()>0) {
+        if (examinationTicket.getTicketsActual().size() > 0) {
             examUser.setLastTicket(newFromUser);
             sendMsgWithInlineKeyBoard(examUser.getChatId(), generateTextForTicket(examUser.getLastTicket()));
         } else {
-            sendMsg(examUser.getChatId()," последний вопрос тесты закончены");
+            sendMsg(examUser.getChatId(), " последний вопрос тесты закончены");
             sendMsg(examUser.getChatId(), generateResult(examUser));
         }
     }
@@ -108,12 +109,12 @@ public class Bot extends TelegramLongPollingBot {
         int allTickets = examUser.getExaminationTickets().getTicketsPassed().size();
         int rightAnswerCount = examUser.getExaminationTickets().getTicketsPassed().stream()
                 .mapToInt(value -> value.getCorrectAnswer().equals(value.getActualAnswer()) ? 1 : 0).sum();
-        return "Правильных ответов " + rightAnswerCount * 100 /allTickets + " %";
+        return "Правильных ответов " + rightAnswerCount * 100 / allTickets + " %";
     }
 
     private void generateTestForExamUser(ExamUser examUser, String type) {
         ExaminationTicket examinationTicket = new ExaminationTicket();
-        ArrayList<Ticket> tickets =  MicroServiceUtil.getExaminationTicketFromMicroservice(type,10);
+        ArrayList<Ticket> tickets = MicroServiceUtil.getExaminationTicketFromMicroservice(type, 10);
         examUser.setLastTicket(tickets.remove(0));
         examinationTicket.setTicketsActual(tickets);
         examinationTicket.setStartTime(Instant.now());
@@ -244,6 +245,7 @@ public class Bot extends TelegramLongPollingBot {
     public String getBotUsername() {
         return "Aston_Akrafit_bot";
     }
+
     @Override
     public void onRegister() {
         super.onRegister();
@@ -253,6 +255,7 @@ public class Bot extends TelegramLongPollingBot {
     public String getBotToken() {
         return botSettings.getToken();
     }
+
     public static Bot getInstance() {
         if (instance == null)
             instance = new Bot();
