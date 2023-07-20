@@ -64,7 +64,7 @@ public class Bot extends TelegramLongPollingBot {
         if (message.hasText()) {
             switch (message.getText()) {
                 case "Помощь":
-                    //sendMsg(message.getChatId(), examUser.getName());
+                    sendMsg(message.getChatId(), "");
                     break;
                 case "Мой ID":
                     sendMsg(message.getChatId(), message.getChatId().toString());
@@ -96,7 +96,7 @@ public class Bot extends TelegramLongPollingBot {
         Ticket newFromUser = examinationTicket.getTicketsActual().remove(0);
         if (examinationTicket.getTicketsActual().size() > 0) {
             examUser.setLastTicket(newFromUser);
-            sendMsgWithInlineKeyBoard(examUser.getChatId(), generateTextForTicket(examUser.getLastTicket()));
+            sendMsgWithInlineKeyBoard(examUser.getChatId(), generateTextForTicket(examUser.getLastTicket(), examinationTicket.getTicketsPassed().size()));
         } else {
             sendMsg(examUser.getChatId(), " последний вопрос тесты закончены");
             sendMsg(examUser.getChatId(), generateResult(examUser));
@@ -119,7 +119,7 @@ public class Bot extends TelegramLongPollingBot {
         examinationTicket.setStartTime(Instant.now());
         examUser.setExaminationTickets(examinationTicket);
         examUser.setExaminationStartTime(Instant.now());
-        String textForSend = generateTextForTicket(examUser.getLastTicket());
+        String textForSend = generateTextForTicket(examUser.getLastTicket(),examinationTicket.getTicketsPassed().size());
         sendMsgWithInlineKeyBoard(examUser.getChatId(), textForSend);
 
     }
@@ -138,8 +138,9 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
 
-    private String generateTextForTicket(Ticket ticket) {
-        return ticket.getTitle() + "\n\n" +
+    private String generateTextForTicket(Ticket ticket, int size) {
+        int num = size + 1;
+        return "Вопрос " + num  + ": " +  ticket.getTitle() + "\n\n" +
                 "A: " + ticket.getAnswers().get(0) + "\n\n" +
                 "B: " + ticket.getAnswers().get(1) + "\n\n" +
                 "C: " + ticket.getAnswers().get(2) + "\n\n" +
@@ -186,8 +187,8 @@ public class Bot extends TelegramLongPollingBot {
         KeyboardRow keyboardSecondRow = new KeyboardRow();
         keyboardFirstRow.add(new KeyboardButton("Помощь"));
         keyboardFirstRow.add(new KeyboardButton("Java тесты"));
-        keyboardSecondRow.add(new KeyboardButton("Мой ID"));
-        keyboardSecondRow.add(new KeyboardButton("О программе"));
+//        keyboardSecondRow.add(new KeyboardButton("Мой ID"));
+//        keyboardSecondRow.add(new KeyboardButton("О программе"));
 
         keyboardRowList.add(keyboardFirstRow);
         keyboardRowList.add(keyboardSecondRow);
